@@ -1,3 +1,4 @@
+// Import necessary modules
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
@@ -7,15 +8,18 @@ const path = require('path');
 const app = express();
 const PORT = 5003;
 
+// Middleware
 app.use(cors());
 app.use(express.json());
-app.use('/uploads', express.static('uploads'));
+app.use('/uploads', express.static('uploads')); // Serve static files from the 'uploads' folder
 
+// MongoDB connection
 const mongoURI = "mongodb://localhost:27017/real-estate";
 mongoose.connect(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true })
     .then(() => console.log('MongoDB connected'))
     .catch(err => console.error('MongoDB connection error:', err));
 
+// Define schema and model for listings
 const ListingSchema = new mongoose.Schema({
     title: { type: String, required: true, maxlength: 100 },
     description: { type: String, required: true, minlength: 20, maxlength: 500 },
@@ -33,20 +37,88 @@ const ListingSchema = new mongoose.Schema({
         phone: { type: String, required: true, match: /^[789]\d{9}$/ },
         email: { type: String, required: true }
     },
-    media: [{ type: { type: String, enum: ['image', 'video'] }, url: String }]
+    media: [{ type: { type: String, enum: ['image'], required: true }, url: { type: String, required: true } }]
 });
 
-const Listing = mongoose.model('Listing', ListingSchema);
+const Listing = mongoose.model('Listing', ListingSchema, 'listings');
 
-app.post('/api/listings', async (req, res) => {
-    try {
-        const newListing = new Listing(req.body);
-        const savedListing = await newListing.save();
-        res.status(201).json(savedListing);
-    } catch (error) {
-        console.error('Error saving listing:', error);
-        res.status(500).json({ message: 'Server error' });
+// Configure multer for image uploads
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, 'uploads/'); // Files will be saved in the 'uploads' folder
+    },
+    filename: (req, file, cb) => {
+        cb(null, Date.now() + path.extname(file.originalname)); // Use a timestamp to avoid duplicate names
     }
 });
 
-app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
+const upload = multer({
+    storage: storage,
+    fileFilter: (req, file, cb) => {
+        if (file.mimetype.startsWith('image/')) {
+            cb(null, true);
+        } else {
+            cb(new Error('Only image files are allowed'), false);
+        }
+    }
+});
+
+// Routes
+const router = express.Router();
+
+// POST route to create a new listing with image upload
+router.post('/listings', upload.array('media', 5), async (req, res) => {
+    try {
+        const mediaFiles = req.files.map(file => ({
+            type: 'image',
+            url: `/uploads/${file.filename}`
+        }));
+
+        const newListing = new Listing({
+            ...req.body,
+            media: mediaFiles
+        });
+
+        await newListing.save();
+        res.status(201).json({ message: 'Listing created successfully!', listing: newListing });
+    } catch (err) {
+        console.error('Error creating listing:', err);
+        res.status(500).json({ message: 'Server error', error: err.message });
+    }
+});
+
+// GET route to fetch all listings
+router.get('/listings', async (req, res) => {
+    try {
+        const listings = await Listing.find();
+        res.json(listings);
+    } catch (err) {
+        console.error('Error fetching listings:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// DELETE route to delete a listing by its ID
+router.delete('/listings/:id', async (req, res) => {
+    const { id } = req.params;
+    try {
+        const listing = await Listing.findById(id);
+        if (!listing) {
+            return res.status(404).json({ message: 'Listing not found' });
+        }
+
+        await Listing.findByIdAndDelete(id);
+        res.status(200).json({ message: 'Listing deleted successfully' });
+    } catch (error) {
+        console.error('Error deleting listing:', error);
+        res.status(500).json({ message: 'Server error, failed to delete listing' });
+    }
+});
+
+// Use the routes in the app
+app.use('/api', router);
+
+// Start the server
+app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+});
