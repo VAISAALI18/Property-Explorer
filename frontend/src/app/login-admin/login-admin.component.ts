@@ -60,7 +60,7 @@ export class LoginAdminComponent implements OnInit {
   // Delete a listing by ID
   deleteListing(id: string): void {
      
-    const apiUrl = `http://localhost:5003/api/listings/${id}`;
+    const apiUrl = `https://reel-to-real-mpnj.onrender.com/api/listings/${id}`;
     
     if (confirm('Are you sure you want to delete this listing?')) {
       this.http.delete<{ message: string }>(apiUrl)
