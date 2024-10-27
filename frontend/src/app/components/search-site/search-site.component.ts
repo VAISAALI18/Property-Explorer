@@ -23,7 +23,7 @@ export class SearchSiteComponent implements OnInit {
 
   // Fetch all listings from backend
   fetchListings() {
-    this.http.get('http://localhost:5003/api/listings')
+    this.http.get('https://reel-to-real-mpnj.onrender.com/api/listings')
       .subscribe((data: any) => {
         this.listings = data; // Store the fetched listings
         this.filteredListings = data; // Initially, all listings are shown
