@@ -70,7 +70,7 @@ export class AddSiteComponent {
         contact: this.contact
       };
 
-      this.http.post('http://localhost:5003/api/listings', listingData, {
+      this.http.post('https://reel-to-real-mpnj.onrender.com/api/listings', listingData, {
         headers: { 'Content-Type': 'application/json' }
       })
       .subscribe(response => {
