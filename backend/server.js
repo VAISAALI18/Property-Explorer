@@ -3,7 +3,6 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const multer = require('multer');
-const path = require('path');
 
 const app = express();
 const PORT = 5003;
@@ -11,10 +10,9 @@ const PORT = 5003;
 // Middleware
 app.use(cors());
 app.use(express.json());
-app.use('/uploads', express.static('uploads')); // Serve static files from the 'uploads' folder
 
 // MongoDB connection
-const mongoURI = "mongodb://localhost:27017/real-estate";
+const mongoURI = "mongodb+srv://rvaisaali677:vaisaali18@cluster0.gemag.mongodb.net/";
 mongoose.connect(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true })
     .then(() => console.log('MongoDB connected'))
     .catch(err => console.error('MongoDB connection error:', err));
@@ -37,21 +35,13 @@ const ListingSchema = new mongoose.Schema({
         phone: { type: String, required: true, match: /^[789]\d{9}$/ },
         email: { type: String, required: true }
     },
-    media: [{ type: { type: String, enum: ['image'], required: true }, url: { type: String, required: true } }]
+    media: [{ type: { type: String, enum: ['image'], required: true }, data: { type: String, required: true } }]
 });
 
 const Listing = mongoose.model('Listing', ListingSchema, 'listings');
 
-// Configure multer for image uploads
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, 'uploads/'); // Files will be saved in the 'uploads' folder
-    },
-    filename: (req, file, cb) => {
-        cb(null, Date.now() + path.extname(file.originalname)); // Use a timestamp to avoid duplicate names
-    }
-});
-
+// Configure multer to store files in memory
+const storage = multer.memoryStorage();
 const upload = multer({
     storage: storage,
     fileFilter: (req, file, cb) => {
@@ -69,11 +59,13 @@ const router = express.Router();
 // POST route to create a new listing with image upload
 router.post('/listings', upload.array('media', 5), async (req, res) => {
     try {
-        const mediaFiles = req.files.map(file => ({
+        // Convert uploaded files to Base64 and create media array
+        const mediaFiles = req.files ? req.files.map(file => ({
             type: 'image',
-            url: `/uploads/${file.filename}`
-        }));
+            data: file.buffer.toString('base64') // Convert image buffer to Base64 without additional encoding
+        })) : [];
 
+        // Create a new listing with the request body and media files
         const newListing = new Listing({
             ...req.body,
             media: mediaFiles
