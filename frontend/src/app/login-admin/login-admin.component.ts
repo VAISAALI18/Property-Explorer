@@ -44,7 +44,7 @@ export class LoginAdminComponent implements OnInit {
 
   // Fetch all listings from the backend (only when logged in)
   fetchListings(): void {
-    this.http.get<Listing[]>('http://localhost:5003/api/listings')
+    this.http.get<Listing[]>('https://reel-to-real-mpnj.onrender.com/api/listings')
       .subscribe(
         data => {
           this.listings = data; // Store the fetched listings
