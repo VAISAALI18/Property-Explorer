@@ -18,7 +18,7 @@ export class ViewsiteComponent implements OnInit {
   }
 
   fetchListings() {
-    this.http.get('http://localhost:5003/api/listings')
+    this.http.get('https://reel-to-real-mpnj.onrender.com/api/listings')
       .subscribe((data: any) => {
         this.listings = data; // Store fetched listings
       }, error => {
