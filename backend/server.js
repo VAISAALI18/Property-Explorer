@@ -12,7 +12,7 @@ app.use(cors());
 app.use(express.json());
 
 // MongoDB connection
-const mongoURI = "mongodb+srv://rvaisaali677:vaisaali18@cluster0.gemag.mongodb.net/";
+const mongoURI = "mongodb+srv://rvaisaali677:vaisaali18@cluster0.gemag.mongodb.net/yourdbname";
 mongoose.connect(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true })
     .then(() => console.log('MongoDB connected'))
     .catch(err => console.error('MongoDB connection error:', err));
@@ -56,10 +56,7 @@ const upload = multer({
 // Routes
 const router = express.Router();
 
-// Root Route
-app.get('/', (req, res) => {
-  res.send('Welcome to the Datalytics API!');
-});
+
 
 // POST route to create a new listing with image upload
 router.post('/listings', upload.array('media', 5), async (req, res) => {
