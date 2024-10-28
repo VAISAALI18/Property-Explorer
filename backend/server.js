@@ -56,6 +56,11 @@ const upload = multer({
 // Routes
 const router = express.Router();
 
+// Root Route
+app.get('/', (req, res) => {
+  res.send('Welcome to the Datalytics API!');
+});
+
 // POST route to create a new listing with image upload
 router.post('/listings', upload.array('media', 5), async (req, res) => {
     try {
